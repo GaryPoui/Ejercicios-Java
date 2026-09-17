@@ -5,6 +5,12 @@ public class Main {
         Producto hamburguesa = new Producto("Hamburguesa", 5000, 10);
         Producto papas = new Producto("Papas", 2000, 5);
         Producto gaseosa = new Producto("Gaseosa", 1500, 20);
+        Producto coca = new Producto("Coca", 2000, 10);
+
+        Item cocaConPackaging = new Packaging(coca, 300);
+        Item cocaConDescuento = new Descuento(cocaConPackaging, 500);
+
+        System.out.println(cocaConDescuento.calcularPrecio());
 
         Combo combo = new Combo();
         combo.agregarItem(hamburguesa);

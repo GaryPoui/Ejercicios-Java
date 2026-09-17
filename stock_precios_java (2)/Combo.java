@@ -4,6 +4,7 @@ import java.util.List;
 public class Combo implements Item {
 
     private List<Item> items;
+    private double precioTotal;
 
     public Combo() {
         this.items = new ArrayList<>();
@@ -19,8 +20,9 @@ public class Combo implements Item {
 
         for (Item item : items) {
             precioTotal += item.calcularPrecio();
+        
         }
-
+        this.precioTotal=precioTotal;
         return precioTotal;
     }
 
