@@ -10,6 +10,7 @@ public class Producto implements Item {
         this.stock = stock;
     }
 
+
     @Override
     public double calcularPrecio() {
         return precio;
