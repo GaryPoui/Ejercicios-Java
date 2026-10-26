@@ -12,11 +12,17 @@ public class Producto implements Item {
 
     @Override
     public double calcularPrecio() {
+        if (precio < 0) {
+            return 0;
+        }
         return precio;
     }
 
     @Override
     public int calcularStock() {
+        if (stock < 0) {
+            return 0;
+        }
         return stock;
     }
 

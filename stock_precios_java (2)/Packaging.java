@@ -4,7 +4,12 @@ public class Packaging extends ItemDecorator {
 
     public Packaging(Item item, double monto) {
         super(item);
-        this.monto = monto;
+
+        if (monto < 0) {
+            this.monto = 0;
+        } else {
+            this.monto = monto;
+        }
     }
 
     @Override

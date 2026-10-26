@@ -7,11 +7,6 @@ public class Main {
         Producto gaseosa = new Producto("Gaseosa", 1500, 20);
         Producto coca = new Producto("Coca", 2000, 10);
 
-        Item cocaConPackaging = new Packaging(coca, 300);
-        Item cocaConDescuento = new Descuento(cocaConPackaging, 500);
-
-        System.out.println(cocaConDescuento.calcularPrecio());
-
         Combo combo = new Combo();
         combo.agregarItem(hamburguesa);
         combo.agregarItem(papas);
@@ -20,11 +15,20 @@ public class Main {
         System.out.println("Precio combo: $" + combo.calcularPrecio());
         System.out.println("Stock combo: " + combo.calcularStock());
 
-        Item comboConPackaging = new Packaging(combo, 500);
-        System.out.println("Combo + packaging: $" + comboConPackaging.calcularPrecio());
+        Combo comboGrande = new Combo();
+        comboGrande.agregarItem(combo);
+        comboGrande.agregarItem(coca);
 
-        Item comboFinal = new Descuento(comboConPackaging, 1000);
-        System.out.println("Combo + packaging + descuento: $" + comboFinal.calcularPrecio());
-        System.out.println("Stock final: " + comboFinal.calcularStock());
+        Item precioFinal = new Packaging(
+                new Descuento(
+                        new Descuento(comboGrande, 1000),
+                        500),
+                300);
+
+        System.out.println("Precio combo anidado: $" + comboGrande.calcularPrecio());
+        System.out.println("Stock combo anidado: " + comboGrande.calcularStock());
+        System.out.println("Precio final con descuentos y packaging: $"
+                + precioFinal.calcularPrecio());
+        System.out.println("Stock final: " + precioFinal.calcularStock());
     }
 }

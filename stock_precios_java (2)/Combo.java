@@ -4,14 +4,15 @@ import java.util.List;
 public class Combo implements Item {
 
     private List<Item> items;
-    private double precioTotal;
 
     public Combo() {
         this.items = new ArrayList<>();
     }
 
     public void agregarItem(Item item) {
-        items.add(item);
+        if (item != null) {
+            items.add(item);
+        }
     }
 
     @Override
@@ -20,9 +21,8 @@ public class Combo implements Item {
 
         for (Item item : items) {
             precioTotal += item.calcularPrecio();
-        
         }
-        this.precioTotal=precioTotal;
+
         return precioTotal;
     }
 
@@ -32,12 +32,16 @@ public class Combo implements Item {
             return 0;
         }
 
-        int stockMinimo = Integer.MAX_VALUE;
+        int stockCombo = items.get(0).calcularStock();
 
-        for (Item item : items) {
-            stockMinimo = Math.min(stockMinimo, item.calcularStock());
+        for (int i = 1; i < items.size(); i++) {
+            int stockActual = items.get(i).calcularStock();
+
+            if (stockActual < stockCombo) {
+                stockCombo = stockActual;
+            }
         }
 
-        return stockMinimo;
+        return stockCombo;
     }
 }

@@ -4,13 +4,23 @@ public class Descuento extends ItemDecorator {
 
     public Descuento(Item item, double monto) {
         super(item);
-        this.monto = monto;
+
+        if (monto < 0) {
+            this.monto = 0;
+        } else {
+            this.monto = monto;
+        }
     }
 
     @Override
     public double calcularPrecio() {
         double precioFinal = item.calcularPrecio() - monto;
-        return Math.max(precioFinal, 0);
+
+        if (precioFinal < 0) {
+            return 0;
+        }
+
+        return precioFinal;
     }
 
     @Override
