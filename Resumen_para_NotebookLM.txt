@@ -1,0 +1,197 @@
+PATRONES DE DISEÑO EN JAVA
+Resumen de contenidos y contexto de evaluación para NotebookLM
+
+1. PROPÓSITO Y ALCANCE
+
+Este documento es una fuente de estudio autocontenida para una evaluación de patrones de diseño en Java. Los patrones principales que se evaluarán, según la información del estudiante, son Observer, Adapter, Decorator y Composite. También pueden aparecer Builder, Strategy y State. No se conoce el formato exacto de la prueba ni se dispone de un modelo oficial actualizado.
+
+El objetivo es que el estudiante reconozca cada patrón en una consigna, modele sus roles mediante un diagrama de clases UML, explique las relaciones entre objetos, siga un recorrido de ejecución y justifique las decisiones. El nombre del patrón sin una distribución correcta de responsabilidades no basta.
+
+Fuente revisada: https://github.com/GaryPoui/Ejercicios-Java
+Fecha de revisión: 26 de octubre de 2026.
+Commit: 4aa08b79e08552d71d727bbc8e99c7cd12f66f54.
+
+Se leyeron los siete PDF de teoría de Ezequiel Escobar, las cinco consignas de ejercicios y todos los archivos Java de las soluciones, incluidos los tests. Los PDF repetidos en PruebaTincho son duplicados por contenido de los de la raíz. Las propuestas de resolución que siguen se distinguen del código realmente presente. No se ejecutaron las suites Java.
+
+2. FUNDAMENTOS DE PROGRAMACIÓN ORIENTADA A OBJETOS
+
+Interfaz: contrato de operaciones que distintas clases implementan.
+Clase abstracta: puede definir un contrato y compartir atributos o implementación.
+Polimorfismo: el cliente usa un tipo general y la ejecución selecciona el comportamiento del objeto concreto.
+Delegación: un objeto encarga parte del trabajo a otro mediante una referencia.
+Composición de objetos: permite combinar colaboradores y responsabilidades sin una subclase para cada combinación.
+
+Justificaciones útiles: alta cohesión, bajo acoplamiento, separación de responsabilidades y posibilidad de agregar implementaciones sin cambiar el cliente. Los patrones introducen también más clases e indirección; no son obligatorios para toda variación trivial.
+
+UML: el triángulo vacío apunta al tipo general. La generalización con línea continua corresponde a extends. La realización con línea discontinua corresponde a implements. Una asociación indica que un objeto conoce o contiene otro. Una colección List<Componente> permite contener distintas implementaciones de ese componente. Contener productos no equivale a heredar de un producto simple.
+
+Método de resolución: identificar qué cambia, definir la operación común, asignar el contrato, separar implementaciones, dibujar las referencias y recorrer un ejemplo. Declarar supuestos sobre casos vacíos, errores y reglas que la consigna no precisa.
+
+3. OBSERVER
+
+Familia: comportamiento.
+Intención: notificar a los interesados sobre eventos de un sujeto y separar el evento de sus reacciones.
+
+Roles: sujeto u observable, contrato de observador, observadores concretos y datos del evento. El sujeto mantiene observadores del mismo contrato, ofrece suscripción y baja y recorre los interesados al ocurrir el evento. No programa internamente los detalles de todas las reacciones.
+
+Ejemplo del repositorio: Sucursal es sujeto; ObservadorVenta define alVender(Venta); AdaptadorContabilidad, AdaptadorDeposito y ContadorVentas son observadores concretos. La venta genera un evento con sucursal, fecha, producto e importe. Cada interesado usa los datos que necesita.
+
+Recorrido: suscribir interesados; vender; crear y guardar Venta; notificar; cada observador reacciona. Una baja afecta avisos futuros, no borra eventos anteriores. Si A, B y C reciben una venta y luego se elimina B antes de otras dos, A y C reciben tres avisos y B recibe uno.
+
+La teoría usa notificaciones sincrónicas y secuenciales. Observer no garantiza hilos, paralelismo, reintentos ni entrega persistente. En Sucursal.java se copia el arreglo de destinatarios y se captura RuntimeException por observador para continuar el recorrido. Esto no reintenta al observador fallido ni revierte la venta.
+
+Venta guarda el importe al momento de crearse. Cambiar una tasa después no recalcula las ventas anteriores. La interfaz de observador puede reemplazarse por una clase abstracta si se necesita compartir comportamiento.
+
+4. ADAPTER
+
+Familia: estructural.
+Intención: hacer compatible una clase o biblioteca con el contrato requerido por el cliente, encapsulando sus llamadas específicas.
+
+Roles: cliente, contrato requerido, adaptador y clase o sistema adaptado. El adaptador implementa el contrato requerido, conserva o utiliza la dependencia y traduce operaciones, parámetros o formatos.
+
+Ejemplo real: AdaptadorContabilidad implementa ObservadorVenta. Recibe alVender(Venta) y llama ApiContable.registrarImporte(sucursal, importe). AdaptadorDeposito transforma el mismo evento en ApiDeposito.prepararProducto(sucursal, codigoProducto). ApiContable y ApiDeposito son representaciones que imprimen mensajes, no integraciones HTTP implementadas.
+
+Una misma clase puede ser Observer y Adapter: reacciona al evento y además traduce hacia una API incompatible. ContadorVentas es observador sin adaptar una API externa.
+
+Ventajas: concentra la dependencia de la biblioteca, facilita reemplazos y permite pruebas con colaboradores sustitutos. El cliente queda desacoplado de la clase externa; el adaptador sigue dependiendo de ella. No soluciona por sí mismo fallos de red ni diferencias semánticas entre proveedores.
+
+5. COMPOSITE
+
+Familia: estructural.
+Intención: organizar hojas y grupos en una estructura de árbol y tratarlos de forma polimórfica mediante un contrato común.
+
+Roles: componente, hoja y compuesto. El compuesto contiene varios componentes, no solamente hojas. Sus hijos pueden ser otros compuestos. Las operaciones se resuelven mediante delegación recursiva.
+
+Ejemplo de stock: Item declara calcularPrecio() y calcularStock(). Producto es hoja. Combo contiene List<Item>. Precio del combo = suma de precios de sus hijos. Stock del combo = mínimo de stocks, bajo el supuesto de una unidad de cada componente y disponibilidades independientes.
+
+Ejemplo: A vale 100 con stock 5, B vale 200 con stock 3 y C vale 50 con stock 9. X contiene A y B: precio 300 y stock 3. Y contiene X y C: precio 350 y stock 3. El cliente consulta Y sin distinguir sus niveles internos.
+
+Casos límite: la versión de la raíz devuelve precio 0 y stock 0 para un combo vacío. No deben permitirse ciclos. Si se necesitan varias unidades de un producto, debe considerarse la cantidad requerida. Si dos ramas consumen el mismo inventario, el mínimo de stocks aislados puede sobreestimar existencias: hay que acumular la demanda del producto compartido.
+
+Composite no es solamente tener una lista. Es compartir un contrato entre hojas y compuestos y resolver operaciones sobre una estructura recursiva.
+
+6. DECORATOR
+
+Familia: estructural.
+Intención: agregar, quitar o interceptar responsabilidades en ejecución sin cambiar el contrato que usa el cliente.
+
+Roles: componente, componente concreto, decorador base y decoradores concretos. El decorador ES un componente y TIENE un componente. Conserva el mismo contrato y envuelve una instancia de ese contrato, que puede ser otra capa o un compuesto.
+
+Ejemplo real: ItemDecorator implementa Item y guarda Item item. Descuento resta un monto y limita el precio a cero en la versión de la raíz. Packaging suma un monto. Ambos delegan el stock y no lo modifican. Descuento y Packaging extienden ItemDecorator; no extienden Combo.
+
+Recorrido: Packaging(Descuento(Descuento(combo,100),50),30). Para precio base 500, el retorno es 500, 400, 350 y 380. El cliente llama al objeto exterior.
+
+El orden importa cuando cambian los efectos. Producto de precio 80: Packaging(Descuento(producto,100),50) devuelve 50 con límite cero. Descuento(Packaging(producto,50),100) devuelve 30. Las capas son combinables, pero no necesariamente conmutativas.
+
+Si A y B actúan antes y después de delegar, A(B(base)) ejecuta antes A, antes B, base, después B y después A. El apunte admite que una capa bloquee totalmente una llamada si esa es su responsabilidad. Quitar una capa requiere actualizar referencias o reconstruir la cadena, no ocurre automáticamente.
+
+7. BUILDER
+
+Familia: creacional.
+Intención: separar el proceso de construcción de la representación y entregar un objeto consistente después de configurar sus partes.
+
+Roles clásicos: Producto, Builder, BuilderConcreto y Director. El Director es opcional y coordina una receta de pasos; puede ejecutar distintos pasos o cambiar el orden. También puede existir un builder fluido concreto sin una jerarquía completa.
+
+Aplicación propuesta: construir un Aviso o una Solicitud con destinatario, mensaje y otros datos obligatorios. Los métodos de configuración guardan los datos y construir() valida campos obligatorios y combinaciones válidas antes de devolver el resultado. Si falta información, lanza una excepción en lugar de devolver un objeto inconsistente.
+
+Los setters encadenados no bastan para garantizar consistencia. El producto debe conservar sus invariantes después de construirlo, mediante inmutabilidad o validación de las modificaciones. Builder no es el nombre de cualquier proceso que tenga varios pasos.
+
+8. STRATEGY
+
+Familia: comportamiento.
+Intención: encapsular distintas maneras de resolver la misma tarea y permitir intercambiarlas en ejecución.
+
+Roles: contexto, contrato de estrategia y estrategias concretas. El contexto guarda una estrategia, delega la operación y puede recibir otra. Las estrategias no necesitan conocerse entre sí ni establecer transiciones. Pueden recibir parámetros, guardar configuración y reutilizarse cuando su estado interno lo permite.
+
+Ejemplo real: Exportador usa EstrategiaDeExportacion. ExportarAExcel y ExportarAPDF implementan exportar(Exportable). setEstrategia cambia el formato sin cambiar el método exportar del contexto.
+
+Ejemplo propuesto de logística: TratamientoDespacho define costo(base) y manipular(). Estándar devuelve base; Frágil calcula base * 1,20 + seguro e indica protección; Rápido calcula base + 1500 e indica prioridad. El contexto elige un algoritmo, sin apilar tratamientos como capas.
+
+9. STATE
+
+Familia: comportamiento.
+Intención: cambiar la respuesta de un objeto según su estado actual y representar las transiciones permitidas.
+
+Roles: contexto, contrato o clase abstracta de estado y estados concretos. El contexto delega las acciones al estado actual. Una acción puede provocar una transición o rechazarse. Los estados pueden tener una referencia al contexto o recibirlo como parámetro. Si no guardan información particular del contexto, se pueden compartir instancias.
+
+Ejemplo propuesto de cajero: SinTarjeta, ConTarjeta, PinCorrecto y Extrayendo. Insertar tarjeta pasa de SinTarjeta a ConTarjeta. PIN válido pasa a PinCorrecto; uno inválido conserva ConTarjeta e informa error. Extraer desde PinCorrecto pasa a Extrayendo. Se debe definir qué ocurre al finalizar y cuándo se admite expulsar. Propuesta: al finalizar vuelve a PinCorrecto y expulsar desde una sesión disponible vuelve a SinTarjeta. Son supuestos de resolución, no todas esas transiciones están especificadas en el PDF.
+
+State y Strategy se parecen estructuralmente. La diferencia es la intención: Strategy elige una alternativa de algoritmo; State regula comportamiento y transiciones del ciclo de vida. Un enum con un switch puede modelar estados, pero el patrón enseñado distribuye su comportamiento en clases.
+
+10. EJERCICIOS Y SOLUCIONES DEL REPOSITORIO
+
+10.1 Módulo de stock y precios
+
+Consigna: productos simples, combos de productos y combos de combos; precio por suma, descuentos fijos acumulables y packaging con costo.
+
+Solución de stock_precios_java (2): Item, Producto, Combo, ItemDecorator, Descuento y Packaging. Combina Composite y Decorator. Main: hamburguesa 5000 stock 10, papas 2000 stock 5 y gaseosa 1500 stock 20 dan combo 8500 stock 5. Al sumar Coca 2000 stock 10, combo grande 10500 stock 5. Con descuentos 1000 y 500 y packaging 300: total 9300, stock 5.
+
+Otra solución en PruebaTincho/solución-fravega/ddsCompoYDec: Producto abstracto es componente, ProductoSimple es hoja, Combo es compuesto, Aplicable es decorador base y DescuentoFijo y Packaging son capas. Pese al nombre de carpeta, resuelve stock y precios. Los tests incluyen combo de tres productos de 100 con stock mínimo 3: precio 300; combo con piloto adicional: precio 400; una cadena con paquetes y descuentos termina en 400.
+
+Limitaciones de esa segunda versión: DescuentoFijo puede generar precio negativo y Combo.stock falla con un conjunto vacío. La raíz contempla esos casos. El README tiene un dibujo textual confuso: ItemDecorator implementa Item, no hereda de Combo.
+
+10.2 Frávega
+
+Consigna: avisar cada venta a contabilidad, depósito y contador diario; aplicar impuestos por categoría. Solución real en Fravega_Java (2)/fravega: Observer y Adapter para el evento; Producto, TipoProducto e Impuesto para precios. TipoProducto es una clase abstracta, no una interfaz. Sus subclases inicializan IVA y el impuesto específico.
+
+Fórmulas académicas: IVA = precioBase * porcentaje; EO = (0,5 * precioBase) / (4 * ganancias); EI = precioBase / 4 + 0,3 * ganancias. Precio final = precioBase + suma de impuestos calculados sobre precioBase.
+
+Base 1000, IVA 0,21, ganancias EO 4 y ganancias EI 3,50: IVA 210, EO 31,25, EI 251,05; electrónico 1241,25 y hogar 1461,05. Con IVA 0,25 y ganancias EO 5, electrónico nuevo 1275. La venta anterior conserva 1241,25. El PDF contiene erratas INA por IVA y El por EI; el código usa IVA y EI.
+
+Una lista de impuestos no demuestra Decorator: aquí no existen capas que envuelvan al componente con el mismo contrato.
+
+10.3 Módulo exportador
+
+Solución real: Exportador mantiene EstrategiaDeExportacion y Exportable. Documento implementa Exportable y maneja Map<String,List<String>>. ExportarAExcel usa Apache POI. ExportarAPDF usa AdapterExportadorPDF, implementado por AdapterApachePDFBox. Strategy cambia formato; Adapter aísla la biblioteca PDF.
+
+La marca de agua solicitada NO está implementada en los Java revisados. Propuesta: decorador ConMarcaDeAgua implementa EstrategiaDeExportacion, envuelve la estrategia PDF, delega la exportación y después modifica el PDF mediante un servicio específico. No se aplica a Excel sin una regla compatible.
+
+Los tests existentes comparan rutas devueltas; no verifican por sí solos el archivo, su contenido o la marca. El código captura IOException y devuelve igualmente una ruta. Devolver una ruta no garantiza una exportación exitosa. El pom declara Java 8, POI 4.1.2 y PDFBox 2.0.19: son versiones del ejemplo, no recomendaciones de dependencias actuales.
+
+10.4 Gestión de consorcios
+
+Hay consigna, no solución Java de este caso. Propuesta de dominio: Consorcio, UnidadFuncional, Gasto, Expensa y EjecucionLiquidacion. Conservar administrador, período, fecha y hora y criterio elegido para trazabilidad. Los gastos recurrentes se cargan para el siguiente período según la regla; el pago se confirma manualmente.
+
+Strategy para elegir el criterio de liquidación mensual. Adapter para el saldo bancario externo que necesita CBU o alias, fecha y token. Strategy para elegir canal de aviso; Adapter para el proveedor de cada canal. Observer solo si se modela explícitamente un evento y suscripciones de interesados.
+
+Los criterios siguen obtener saldo, calcular gastos y dividir expensas. Los primeros pasos pueden quedar en un servicio y el reparto delegarse al criterio. Otra alternativa es Template Method, patrón fuera de la lista de evaluación informada.
+
+Ejemplo propuesto, con reglas asumidas: gastos 100000 y saldo aplicable 20000, sin deudas, gastos particulares ni reservas; repartir 80000. A con 60 % paga 48000 y B con 40 % paga 32000. Avisar a A por WhatsApp y a B por email. El PDF no define todas las fórmulas de reservas y deudas. Su examen original también incluye arquitectura y persistencia, lo que no demuestra que esos temas entren en esta prueba actual.
+
+11. RESOLUCIONES PROPUESTAS PARA LOS CINCO CASOS DE PATRONES IV
+
+A. Tareas y subtareas: Composite. Tarea declara nombre(), horas() y completa(). TareaSimple guarda horas y estado; TareaCompuesta tiene List<Tarea>, suma horas y devuelve true solo si todos los hijos están completos. No guarda manualmente horas o completitud del grupo. Ejemplo: frontend de 3 h completas y 5 h incompletas; backend 7 h completas; deploy 2 h completas: proyecto 17 h incompleto. Al completar la tarea de 5 h, todo queda completo. Para un grupo vacío se declara una política: aquí 0 h y true, o alternativamente se prohíbe que esté vacío.
+
+B. Notificaciones personalizadas: Decorator. Contrato Notificacion.enviar(), base y capas de prioridad, negrita, sonido y reenvío. Cada capa envuelve otra Notificacion. Configurar una prioridad o formato debe afectar el envío real, no limitarse a imprimir mensajes. El reenvío puede delegar el envío base y realizar un envío adicional.
+
+C. Playlist con efectos: Composite para canciones y playlists anidadas mediante ElementoReproducible.reproducir(); Decorator para volumen, eco, velocidad y bucle. Los efectos envuelven cualquier ElementoReproducible y se pueden apilar. Aplicar un efecto a la playlist afecta la reproducción de ese conjunto; aplicarlo a una canción afecta solo esa canción. Bucle necesita cantidad o mecanismo de parada.
+
+D. Cajero automático: State para acciones y transiciones; Decorator para seguridad. CajeroBase y SeguridadDecorator comparten OperacionCajero. ModoSeguro exige confirmación antes de delegar, Alarma actúa después según una política definida y ModoSilencioso suprime la presentación. Para silenciar de verdad, se desacopla la salida de los println internos; las operaciones pueden devolver Respuesta. Una capa de seguridad no debe reemplazar la máquina de estados.
+
+E. Logística: Composite para envíos simples y agrupados; Strategy para tratamientos. El grupo suma costos, estructura etiquetas y calcula peso total. Propuesta: los tratamientos se aplican a hojas y el grupo suma sus costos finales, evitando recargos dobles. Dirección: comparar hijos inmediatos por peso total y delegar direccion() en el más pesado; si se pretende la hoja más pesada de todo el árbol, se requiere otra búsqueda. Rechazar vacíos y definir desempate. Ejemplo: A base 1000 peso 2 estándar cuesta 1000; B base 2000 peso 5 frágil con seguro 100 cuesta 2500. Grupo cuesta 3500, pesa 7 y usa dirección de B. Si B pasa a rápido cuesta 3500 y el grupo 4500.
+
+12. CONFUSIONES QUE LA PREPARACIÓN DEBE EVITAR
+
+Adapter traduce contratos; Decorator conserva el contrato y agrega capas.
+Composite reúne varios componentes; Decorator envuelve uno.
+Strategy intercambia algoritmos; State representa estados y transiciones.
+Observer desacopla eventos e interesados; Strategy de notificación elige cómo enviar un mensaje.
+Builder construye objetos consistentes; no es una etiqueta para cualquier secuencia de pasos.
+Una interfaz con varias implementaciones no identifica por sí sola un patrón: hay que explicar la intención y la delegación.
+Una implementación didáctica incompleta no debe presentarse como si cumpliera toda la consigna.
+
+13. GUÍA PARA PRODUCIR ACTIVIDADES EN NOTEBOOKLM
+
+Usar este texto como fuente de alcance y contenidos. Priorizar Observer, Adapter, Decorator y Composite sin omitir Builder, Strategy y State. Explicar en español claro, con nombres de clases Java y ejemplos de los ejercicios revisados. Al generar audios o material de repaso, describir verbalmente quién implementa el contrato, quién guarda referencias y quién llama a quién.
+
+Producir preguntas de reconocimiento, comparaciones de patrones, seguimiento de llamadas, cálculos de precios y stocks, diagramas de clases y diseño integrador. Incluir distractores que distingan intención de semejanza visual. Para práctica, mostrar la consigna antes de la solución. Al corregir, justificar el patrón y las relaciones, no solo marcar el nombre correcto.
+
+Distinguir siempre lo confirmado por el repositorio, las limitaciones observadas y las propuestas didácticas. No inventar requisitos del docente, resultados de pruebas ejecutadas ni soluciones oficiales que no existen en la fuente.
+
+14. INVENTARIO DE FUENTES PRIMARIAS
+
+Teoría: Patrón Observer.pdf; Patrón Adapter.pdf; Patrón Decorator.pdf; Patrón Composite.pdf; Patrón Builder.pdf; Patrón Strategy.pdf; Patrón State.pdf. Autor indicado en los apuntes: Ezequiel Escobar.
+Consignas: 5-Módulo de manejo de stock y precios (3).pdf; 6-Frávega (1).pdf; 7-Modulo exportador.pdf; 8-Ejercicios patrones III - Gestión de consorcios.pdf; 9-Ejercicios patrones IV.pdf.
+Implementaciones: stock_precios_java (2); Fravega_Java (2)/fravega; PruebaTincho/solución-fravega/ddsCompoYDec/src; PruebaTincho/solucion-modulo-exportador/src/main/java y src/test/java. También se revisó README.md y pom.xml del exportador.
+
+Cada ruta pertenece al repositorio indicado al inicio, en el commit de revisión. Este resumen debe actualizarse si cambia el material del curso.
